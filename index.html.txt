@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist Fotográfico</title>
+
+<style>
+body{font-family:sans-serif;margin:20px;}
+section{margin-bottom:20px;border:1px solid #ccc;padding:10px;border-radius:10px;}
+input[type="text"], input[type="file"]{padding:10px;width:100%;margin-bottom:10px;}
+button{padding:15px;width:100%;font-size:16px;background:#007bff;color:white;border:none;border-radius:10px;cursor:pointer;margin-top:10px;}
+img{max-width:100px;margin:5px;border:1px solid #ccc;border-radius:5px;}
+.contador{font-size:12px;color:gray;}
+.edit-title{border:none;background:#f0f0f0;padding:5px;font-size:16px;width:100%;margin-bottom:5px;}
+</style>
+</head>
+
+<body>
+
+<h1>Checklist Fotográfico</h1>
+
+<label>ID do Site (obrigatório)</label>
+<input type="text" id="siteId" placeholder="Ex: SITE_123">
+
+<button onclick="toggleAdmin()">Modo Administrador</button>
+
+<div id="checklistContainer"></div>
+
+<button onclick="enviarRelatorio()">📤 Enviar Relatório</button>
+
+<div id="status"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
