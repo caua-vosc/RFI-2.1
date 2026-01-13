@@ -2,7 +2,7 @@ const BACKEND_URL = 'https://rfi-2-0.onrender.com/upload';
 
 let adminMode = false;
 
-const secoes = [
+let secoes = [
   "FRENTE SITE",
   "PORTÃO DE ACESSO - FRENTE",
   "MEDIDOR DE ENERGIA DO SITE",
@@ -24,20 +24,36 @@ const secoes = [
   "FOTO GERAIS - SITE FINALIZADO"
 ];
 
-let state = {}; // arquivos reais (File)
+let state = {}; // { secao: [File, ...] }
 
-function toggleAdmin(){
+function toggleAdmin() {
   adminMode = !adminMode;
   renderChecklist();
 }
 
-function renderChecklist(){
+function addSecaoNova() {
+  const novaSecao = prompt("Digite o nome da nova seção:");
+  if (novaSecao && !secoes.includes(novaSecao)) {
+    secoes.push(novaSecao);
+    renderChecklist();
+  }
+}
+
+function renderChecklist() {
   const container = document.getElementById("checklistContainer");
   container.innerHTML = "";
+
+  if (adminMode) {
+    const addBtn = document.createElement("button");
+    addBtn.innerText = "➕ Adicionar Seção";
+    addBtn.onclick = addSecaoNova;
+    container.appendChild(addBtn);
+  }
 
   secoes.forEach((titulo, idx) => {
     const secao = document.createElement("section");
 
+    // Título editável no admin mode
     const titleInput = document.createElement("input");
     titleInput.value = titulo;
     titleInput.className = "edit-title";
@@ -45,6 +61,7 @@ function renderChecklist(){
     titleInput.onchange = e => secoes[idx] = e.target.value;
     secao.appendChild(titleInput);
 
+    // Input de arquivos
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = "image/*";
@@ -53,7 +70,8 @@ function renderChecklist(){
 
     fileInput.onchange = e => {
       const files = Array.from(e.target.files).slice(0,10);
-      state[titulo] = files;
+      if (!state[titulo]) state[titulo] = [];
+      state[titulo] = [...state[titulo], ...files].slice(0,10);
       renderImages(secao, titulo);
     };
 
@@ -69,19 +87,20 @@ function renderChecklist(){
   });
 }
 
-function renderImages(secao, titulo){
+function renderImages(secao, titulo) {
   const imgContainer = secao.querySelector(".img-container");
   imgContainer.innerHTML = "";
 
-  if(!state[titulo]) return;
+  if (!state[titulo]) return;
 
-  state[titulo].forEach((file, idx)=>{
+  state[titulo].forEach((file, idx) => {
     const img = document.createElement("img");
     img.src = URL.createObjectURL(file);
-    img.onclick = ()=>{
-      if(confirm("Remover esta foto?")){
+    img.onclick = () => {
+      if (confirm("Remover esta foto?")) {
         state[titulo].splice(idx,1);
-        renderImages(secao, titulo);
+        URL.revokeObjectURL(img.src);
+        renderImages(secao,titulo);
       }
     };
     imgContainer.appendChild(img);
@@ -93,11 +112,11 @@ function renderImages(secao, titulo){
   imgContainer.appendChild(contador);
 }
 
-async function enviarRelatorio(){
+async function enviarRelatorio() {
   const siteId = document.getElementById("siteId").value;
   const status = document.getElementById("status");
 
-  if(!siteId){
+  if (!siteId) {
     alert("ID do Site é obrigatório");
     return;
   }
@@ -105,35 +124,28 @@ async function enviarRelatorio(){
   status.innerText = "Enviando fotos...";
 
   try {
-    for(const secao in state){
-      if(state[secao].length === 0) continue;
+    for (const secao in state) {
+      if (!state[secao] || state[secao].length === 0) continue;
 
       const formData = new FormData();
       formData.append("siteId", siteId);
       formData.append("section", secao);
 
-      state[secao].forEach(file => {
-        formData.append("photos", file);
-      });
+      state[secao].forEach(file => formData.append("photos", file));
 
-      const res = await fetch(BACKEND_URL, {
-        method: "POST",
-        body: formData
-      });
-
-      if(!res.ok){
-        throw new Error(`Erro ao enviar seção ${secao}`);
-      }
+      const res = await fetch(BACKEND_URL, { method: "POST", body: formData });
+      if (!res.ok) throw new Error(`Erro ao enviar seção ${secao}`);
     }
 
-    status.innerText = "Relatório enviado com sucesso!";
+    status.innerText = "✅ Relatório enviado com sucesso!";
     state = {};
     renderChecklist();
 
-  } catch(err){
+  } catch(err) {
     console.error(err);
-    status.innerText = "Erro ao enviar relatório";
+    status.innerText = "❌ Erro ao enviar relatório";
   }
 }
 
+// Render inicial
 renderChecklist();
